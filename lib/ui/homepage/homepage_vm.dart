@@ -858,7 +858,7 @@ class DiningVM extends GetxController {
 
   void connectOpenAI() async {
     chatGPT = OpenAI.instance.build(
-        token: "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",
+        token: "",
         baseOption: HttpSetup(receiveTimeout: const Duration(seconds: 30)));
   }
 
