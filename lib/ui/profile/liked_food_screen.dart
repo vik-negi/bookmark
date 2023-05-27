@@ -211,112 +211,109 @@ class BooksWidgets extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetBuilder<DiningVM>(builder: (vm) {
-      return FadeAnimation(
-        1.4,
-        Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-            decoration: BoxDecoration(
-                color: Colors.white,
+      return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.5),
+                  spreadRadius: 1,
+                  blurRadius: 7,
+                  offset: const Offset(0, 3), // changes position of shadow
+                ),
+              ]),
+          child: Row(children: [
+            Container(
+              height: 200,
+              width: 130,
+              decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 1,
-                    blurRadius: 7,
-                    offset: const Offset(0, 3), // changes position of shadow
-                  ),
-                ]),
-            child: Row(children: [
-              Container(
-                height: 200,
-                width: 130,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  image: DecorationImage(
-                    image: NetworkImage(userbook.image1.url),
-                    fit: BoxFit.cover,
-                  ),
+                image: DecorationImage(
+                  image: NetworkImage(userbook.image1.url),
+                  fit: BoxFit.cover,
                 ),
               ),
-              const SizedBox(width: 10),
-              Container(
-                width: Get.width - 180,
-                height: 200,
-                child: InkWell(
-                  onTap: () {
-                    Get.to(() => BookDetails(bookModel: userbook));
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(
-                            width: Get.width > 400 ? 200 : Get.width - 180,
-                            child: RichText(
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              text: TextSpan(
-                                  text: userbook.bookName,
-                                  style: TextStyles.blueTitle),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          RichText(
-                            maxLines: 3,
+            ),
+            const SizedBox(width: 10),
+            Container(
+              width: Get.width - 180,
+              height: 200,
+              child: InkWell(
+                onTap: () {
+                  Get.to(() => BookDetails(bookModel: userbook));
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: Get.width > 400 ? 200 : Get.width - 180,
+                          child: RichText(
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             text: TextSpan(
-                                text: userbook.description ??
-                                    "this book is one of the best selling book in 2020",
-                                style: TextStyle(
-                                  color: Colors.grey.shade800,
-                                  fontWeight: FontWeight.w400,
-                                )),
+                                text: userbook.bookName,
+                                style: TextStyles.blueTitle),
                           ),
-                          const SizedBox(height: 10),
-                          Row(children: [
-                            RichText(
-                                text: TextSpan(
-                                    text:
-                                        "₹ ${(userbook.rentPerDay!).toStringAsFixed(2)}",
-                                    style: TextStyles.blueTitle,
-                                    children: const [
-                                  TextSpan(
-                                      text: " Per day",
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: 12,
-                                      ))
-                                ])),
-                            // const SizedBox(width: 10),
-                            // const Text('2 days ago')
-                          ]),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Container(
-                        height: 45,
-                        width: Get.width > 400 ? 200 : Get.width - 200,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: Colors.grey.shade900,
                         ),
-                        child: const Center(
-                          child: Text("View Details",
+                        const SizedBox(height: 8),
+                        RichText(
+                          maxLines: 3,
+                          text: TextSpan(
+                              text: userbook.description ??
+                                  "this book is one of the best selling book in 2020",
                               style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                                fontSize: 18,
+                                color: Colors.grey.shade800,
+                                fontWeight: FontWeight.w400,
                               )),
                         ),
-                      )
-                    ],
-                  ),
+                        const SizedBox(height: 10),
+                        Row(children: [
+                          RichText(
+                              text: TextSpan(
+                                  text:
+                                      "₹ ${(userbook.rentPerDay!).toStringAsFixed(2)}",
+                                  style: TextStyles.blueTitle,
+                                  children: const [
+                                TextSpan(
+                                    text: " Per day",
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 12,
+                                    ))
+                              ])),
+                          // const SizedBox(width: 10),
+                          // const Text('2 days ago')
+                        ]),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Container(
+                      height: 45,
+                      width: Get.width > 400 ? 200 : Get.width - 200,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.grey.shade900,
+                      ),
+                      child: const Center(
+                        child: Text("View Details",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              fontSize: 18,
+                            )),
+                      ),
+                    )
+                  ],
                 ),
-              )
-            ])),
-      );
+              ),
+            )
+          ]));
     });
   }
 }

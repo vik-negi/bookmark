@@ -60,7 +60,7 @@ class BookModel {
     };
   }
 
-  factory BookModel.fromMap(Map<String, dynamic> map) {
+  factory BookModel.fromMap(Map<dynamic, dynamic> map) {
     return BookModel(
       image1: ImageModel.fromMap(map['image1'] as Map<String, dynamic>),
       id: map['_id'] as String,
@@ -244,4 +244,43 @@ class Fees {
 
   factory Fees.fromJson(String source) =>
       Fees.fromMap(json.decode(source) as Map<String, dynamic>);
+}
+
+class MessageModel {
+  int id;
+  bool isImage;
+  String msg;
+  bool isBot;
+  String time;
+  MessageModel(
+      {required this.msg,
+      required this.id,
+      this.isImage = false,
+      this.isBot = false,
+      required this.time});
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'isImage': isImage,
+      'id': id,
+      'msg': msg,
+      'isBot': isBot,
+      'time': time,
+    };
+  }
+
+  factory MessageModel.fromMap(Map<dynamic, dynamic> map) {
+    return MessageModel(
+      id: map['id'] as int,
+      isImage: map['isImage'] == 0 ? false : true,
+      msg: map['msg'] != null ? map['msg'] as String : '',
+      isBot: map['isBot'] == 0 ? false : true,
+      time: map['time'],
+    );
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory MessageModel.fromJson(String source) =>
+      MessageModel.fromMap(json.decode(source) as Map<String, dynamic>);
 }

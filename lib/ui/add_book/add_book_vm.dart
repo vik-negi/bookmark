@@ -120,7 +120,9 @@ class AddBookVM extends GetxController {
 
   String errorStr = "";
   bool validate() {
-    if (titleController.text.trim() == "") {
+    if (diningVM.offline) {
+      errorStr = "Please connect to internet";
+    } else if (titleController.text.trim() == "") {
       errorStr = "Please Enter Book Name";
       return false;
     } else if (descriptionController.text.trim() == "") {
@@ -147,6 +149,7 @@ class AddBookVM extends GetxController {
   void addUserBook() async {
     if (!validate()) {
       showSnackBar(Get.context!, errorStr, true);
+      return;
     }
 
     showLoaderDialog(Get.context!);

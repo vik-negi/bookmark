@@ -51,7 +51,7 @@ class OrderVM extends GetxController with GetSingleTickerProviderStateMixin {
         print(userOrderList[0].info.razorpayOrderId);
       },
       errorOccurFunction: (e) {
-        showSnackBar(Get.context!, e, true);
+        // showSnackBar(Get.context!, e, true);
       },
       url: "${base_url}order",
       method: "get",

@@ -429,10 +429,17 @@ class BookDetails extends StatelessWidget {
                 Container(
                   width: Get.width * 0.9,
                   child: Row(
-                    children: const [
-                      BookTag(name: 'Science', icon: Icons.science),
+                    children: [
+                      // BookTag(name: 'Science', icon: Icons.science),
+                      BookTag(
+                        name: bookModel.genre?.genre ?? "",
+                        // icon: Icons.science
+                      ),
                       SizedBox(width: 20),
-                      BookTag(name: 'Romantic', icon: Icons.favorite),
+                      // BookTag(name: 'Romantic', icon: Icons.favorite),
+                      BookTag(
+                          name: bookModel.language?.language ?? "",
+                          icon: Icons.language),
                     ],
                   ),
                 ),
@@ -577,47 +584,54 @@ class BookDetails extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   margin:
                       const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  child: const Text(
-                    "More Books by Vikram Negi",
+                  child: Text(
+                    "More Books by ${bookModel.uploadedBy ?? ''}",
                     style: TextStyle(
                         // color: Colors.black,
                         fontSize: 16,
                         fontWeight: FontWeight.bold),
                   ),
                 ),
-
-                Container(
-                  height: 175,
-                  child: ListView.separated(
-                      shrinkWrap: true,
-                      scrollDirection: Axis.horizontal,
-                      itemBuilder: (context, i) {
-                        return const SizedBox(
-                          width: 20,
-                        );
-                      },
-                      separatorBuilder: (context, i) {
-                        return Column(
-                          children: [
-                            Image.network(vm.bookList[i].image1.url,
-                                height: 140, width: 100, fit: BoxFit.fitHeight),
-                            SizedBox(
-                              width: 100,
-                              child: RichText(
-                                  maxLines: 2,
-                                  text: TextSpan(
-                                    text: vm.bookList[i].bookName,
-                                    style: const TextStyle(
-                                        // color: Colors.black,
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.bold),
-                                  )),
-                            )
-                          ],
-                        );
-                      },
-                      itemCount: vm.bookList.length),
-                )
+                vm.moreParticularUserBook.length == 0
+                    ? const SizedBox()
+                    : Container(
+                        height: 175,
+                        child: ListView.separated(
+                            shrinkWrap: true,
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (context, i) {
+                              print(
+                                  "aippp ${vm.moreParticularUserBook.length}");
+                              return Column(
+                                children: [
+                                  Image.network(
+                                      vm.moreParticularUserBook[i].image1.url,
+                                      height: 140,
+                                      width: 100,
+                                      fit: BoxFit.fitHeight),
+                                  SizedBox(
+                                    width: 100,
+                                    child: RichText(
+                                        maxLines: 2,
+                                        text: TextSpan(
+                                          text: vm.moreParticularUserBook[i]
+                                              .bookName,
+                                          style: const TextStyle(
+                                              // color: Colors.black,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.bold),
+                                        )),
+                                  )
+                                ],
+                              );
+                            },
+                            separatorBuilder: (context, i) {
+                              return const SizedBox(
+                                width: 20,
+                              );
+                            },
+                            itemCount: vm.moreParticularUserBook.length),
+                      )
               ],
             ),
           ),
@@ -787,10 +801,12 @@ class BookTag extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: Colors.white,
-            ),
+            icon != null
+                ? Icon(
+                    icon,
+                    color: Colors.white,
+                  )
+                : SizedBox(),
             const SizedBox(
               width: 5,
             ),

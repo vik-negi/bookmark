@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'package:bookmark/data.dart';
 import 'package:bookmark/model/book.dart';
@@ -15,9 +16,16 @@ import 'package:bookmark/utils/shared_prefer.dart';
 import 'package:bookmark/constants/api_constants.dart';
 import 'package:bookmark/utils/snackbar.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_offline/flutter_offline.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:chat_gpt_sdk/chat_gpt_sdk.dart';
+
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 class SuggestionItemCardModel {}
 
@@ -48,11 +56,13 @@ class DiningVM extends GetxController {
   List<BookModel> userBookmarks = [];
   // List<Userbook> userBook = [];
   List<BookModel> userBook = [];
+  List<BookModel> moreParticularUserBook = [];
   List<BookModel> collectionBooks = [];
   TextEditingController searchController = TextEditingController();
   TextEditingController noOfDaysController = TextEditingController();
 
   bool showMore = false;
+  bool offline = false;
   List<BookModel> highestRatingBook = [];
   List<BookModel> relatedBookList = [];
   List<BookModel> suggestionItemCard = [];
@@ -122,6 +132,7 @@ class DiningVM extends GetxController {
       if (infiniteScrollController.position.maxScrollExtent ==
           infiniteScrollController.offset) {
         // fetchData();
+
         list.addAll(collectionBooks);
         print("added by scrollcontroller");
         update();
@@ -145,7 +156,17 @@ class DiningVM extends GetxController {
     // suggestionBookCard = bookData2.sublist(0, 3);
     // getSuggestionItem();
     listScrollListener();
+    connectOpenAI();
+    await initializedDB();
+    await getOfflineData();
     super.onInit();
+  }
+
+  @override
+  void onClose() {
+    super.onClose();
+    chatGPT?.close();
+    chatGPT?.genImgClose();
   }
 
   bool deleteMultipleLiked = false;
@@ -237,7 +258,7 @@ class DiningVM extends GetxController {
     callAndErrorHendling(
         callback: (data) {
           List new_data = [];
-          print("select genre data : $data");
+          // print("select genre data : $data");
           if (data["msg"]["result"] == null) {
           } else if (data["msg"]["result"][0]["uploadedBy"].runtimeType ==
               String) {
@@ -320,13 +341,24 @@ class DiningVM extends GetxController {
     print("BookModel : ${Singlebooks!.bookName}");
   }
 
+  bool firstTimeOnline = true;
+
+  void moreBooksByUser(String id) {
+    for (var item in booksList) {
+      if (item.uploadedBy == id) {
+        moreParticularUserBook.add(item);
+      }
+    }
+    update();
+  }
+
   getAllBooks() async {
     homeScreenLoading = true;
     update();
     await callAndErrorHendling(
         errorOccurFunction: () {},
-        callback: (data) {
-          print("data get all books : ${data}");
+        callback: (data) async {
+          // print("data get all books : ${data}");
           List new_data = [];
           // for (var item in data["msg"]["result"]) {
           //   // var id = item["uploadedBy"]["_id"];
@@ -339,6 +371,37 @@ class DiningVM extends GetxController {
 
           booksList = List<BookModel>.from(bookDataList);
           list = List<BookModel>.from(bookDataList);
+          List<BookModel> offlist =
+              list.sublist(0, list.length < 10 ? list.length : 11);
+          if (firstTimeOnline) {
+            print("ye chal raha hai...............");
+            firstTimeOnline = false;
+            await deleteTableFromDb("offlineBooks");
+            for (var element in offlist) {
+              var image = await http.get(Uri.parse(element.image1.url));
+              var bytes = image.bodyBytes;
+              Map<String, dynamic> map = {
+                "id": element.id,
+                "bookName": element.bookName,
+                "image": bytes,
+                "author": element.author,
+                "genre": element.genre!.genre,
+                "language": element.language!.language,
+                "description": element.description,
+                "rentPerDay": element.rentPerDay,
+                "uploadedBy": element.uploadedBy,
+                "createdAt": element.createdAt,
+                "quantity": element.quantity,
+                "isLiked": element.isLiked.toString(),
+                "state": element.state,
+                "city": element.city,
+              };
+              insertDataIntoDB(map, "offlineBooks");
+            }
+            ;
+            await offlineData("offlineBooks");
+            update();
+          }
           print("list get all : ${list[0].bookName}");
           print("email get all : ${booksList[0].bookName}");
           collectionBooks =
@@ -730,6 +793,277 @@ class DiningVM extends GetxController {
     load();
   }
 
+  // speech to text
+
+  stt.SpeechToText speech = stt.SpeechToText();
+  bool isAudioListening = false;
+  bool replyLoading = false;
+  String audioListenedtext = '';
+  void startListening(bool isSearch) async {
+    if (!isAudioListening) {
+      bool available = await speech.initialize(onStatus: (val) {
+        print('onStatus: $val');
+        print(val);
+        if (val == "done") {
+          isAudioListening = false;
+          speech.stop();
+          sendMessage();
+          update();
+        }
+      }, onError: (val) {
+        print('onError: $val');
+      });
+      if (available) {
+        isAudioListening = true;
+        update();
+        speech.listen(onResult: (val) {
+          print('onResult: ${val.recognizedWords}');
+          if (isSearch) {
+            audioListenedtext = val.recognizedWords;
+          } else {
+            queryController.text = val.recognizedWords;
+          }
+          update();
+        });
+      } else {
+        print("The user has denied the use of speech recognition.");
+      }
+    } else if (isSearch) {
+      isAudioListening = false;
+      update();
+      speech.stop();
+      Get.back();
+    }
+  }
+
+  ScrollController scrollController = ScrollController();
+
+  void scrollControllerAtLast() {
+    scrollController.animateTo(scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+  }
+
+  // write program to find time in 12 hours fromat from DateTime.now()
+
+  String getTime(String time) {
+    String hour = time.substring(11, 13);
+    String min = time.substring(14, 16);
+    String ampm = "AM";
+    if (int.parse(hour) > 12) {
+      hour = (int.parse(hour) - 12).toString();
+      ampm = "PM";
+    }
+    return "$hour:$min $ampm";
+  }
+
+  void connectOpenAI() async {
+    chatGPT = OpenAI.instance.build(
+        token: "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",
+        baseOption: HttpSetup(receiveTimeout: const Duration(seconds: 30)));
+  }
+
+  late OpenAI? chatGPT;
+  final List<MessageModel> queryMessages = [];
+  TextEditingController queryController = TextEditingController();
+
+  String tablefields =
+      "id, bookName, author, genre, language, description, rentPerDay, uploadedBy, createdAt, quantity, isLiked by user, book's state,book's city";
+
+  void sendMessage() async {
+    String responseData = "";
+    if (queryController.text.isEmpty) {
+      ScaffoldMessenger.of(Get.context!).showSnackBar(
+        const SnackBar(
+          content: Text("Please enter a message"),
+        ),
+      );
+      return;
+    }
+    replyLoading = true;
+
+    MessageModel message = MessageModel(
+      id: queryMessages.length + 1,
+      msg: queryController.text,
+      time: DateTime.now().toString(),
+    );
+    queryMessages.add(message);
+    insertDataIntoDB(message.toMap(), "chat");
+
+    List<String> words = queryController.text.split(" ").toList();
+    String orderBookName = queryController.text.substring(
+        queryController.text.indexOf("add") + 4,
+        queryController.text.indexOf("to") - 1);
+    print("orderBookName : $orderBookName");
+
+    update();
+
+    if (words.contains("cart") && words.contains("add")) {
+      bool isFound = false;
+      queryController.clear();
+      update();
+      for (var ele in words) {
+        List<BookModel> booksListt = List<BookModel>.from(booksList);
+        booksList.addAll(genreBooksList);
+        for (var element in booksListt) {
+          if (element.bookName.toLowerCase() == ele.toLowerCase() ||
+              element.bookName.toLowerCase() == orderBookName.toLowerCase()) {
+            selectedSearchBook = element;
+            sevetoCart(element);
+
+            responseData = "Added ${element.bookName} in cart";
+            isFound = true;
+            break;
+            update();
+          }
+        }
+        if (isFound) {
+          break;
+        }
+      }
+      if (!isFound) {
+        showSnackBar(Get.context!, "No book found", true);
+        responseData = "No book found";
+      }
+    } else {
+      String productsDataString = booksList
+          .map((book) =>
+              "${book.id}, ${book.bookName}, ${book.author}, ${book.genre!.genre}, ${book.language!.language}, ${book.description}, ${book.rentPerDay} Rs, ${book.uploadedBy}, ${book.createdAt}, ${book.quantity}, ${book.isLiked}, ${book.state}, ${book.city}")
+          .join('\n');
+      productsDataString = productsDataString +
+          genreBooksList
+              .map((book) =>
+                  "${book.id}, ${book.bookName}, ${book.author}, ${book.genre!.genre}, ${book.language!.language}, ${book.description}, ${book.rentPerDay} Rs, ${book.uploadedBy}, ${book.createdAt}, ${book.quantity}, ${book.isLiked}, ${book.state}, ${book.city}")
+              .join('\n');
+      String query =
+          "${queryController.text}\nuse only following data to answer\n\n$tablefields are the headers and \n$productsDataString is the data respectively for those headers";
+      // print("query text : ${queryController.text}");
+      print("query : ${query.length}");
+
+      queryController.clear();
+      final request = ChatCompleteText(
+        messages: [
+          Map.of({"content": query, "role": "user"}),
+        ],
+        model: kChatGptTurbo0301Model,
+      );
+      final response = await chatGPT!.onChatCompletion(request: request);
+      print(response!.choices.first.message.content);
+      responseData = response.choices.first.message.content;
+    }
+    insertData(
+      responseData,
+      isImage: false,
+    );
+
+    replyLoading = false;
+    update();
+  }
+
+  Database? db;
+
+  void insertData(String data, {bool isImage = false}) {
+    MessageModel message = MessageModel(
+      id: queryMessages.length + 1,
+      msg: data.trim(),
+      isBot: true,
+      time: DateTime.now().toString(),
+      isImage: isImage,
+    );
+    queryMessages.add(message);
+    insertDataIntoDB(message.toMap(), "chat");
+    update();
+  }
+
+  Future initializedDB() async {
+    String path = await getDatabasesPath();
+    db = await openDatabase(
+      join(path, 'chat.db'),
+      version: 1,
+      onCreate: (Database db, int version) async {
+        await db.execute(
+          "CREATE TABLE chat(id INTEGER PRIMARY KEY , msg TEXT NOT NULL,time TEXT NOT NULL,isImage BOOLEAN NOT NULL, isBot BOOLEAN NOT NULL)",
+        );
+
+        await db.execute(
+          "CREATE TABLE offlineBooks(id TEXT PRIMARY KEY, bookName TEXT NOT NULL, author TEXT, genre TEXT, language TEXT, description TEXT, rentPerDay INTEGER, image UINT8LIST, uploadedBy TEXT, createdAt TEXT NOT NULL, quantity INTEGER NOT NULL, isLiked TEXT NOT NULL, state TEXT, city TEXT)",
+        );
+      },
+    );
+
+    update();
+  }
+
+  // insert data into database
+
+  bool loadMessages = false;
+
+  Future<void> insertDataIntoDB(Map<String, dynamic> data, String table) async {
+    try {
+      await db!.insert(
+        table,
+        data,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<void> getOfflineData() async {
+    loadMessages = true;
+    update();
+    await offlineData("chat");
+    await offlineData("offlineBooks");
+    // print("mmmmmmmm length ${chats.length}");
+    loadMessages = false;
+    update();
+  }
+
+  List<Map<String, dynamic>> offlineBooksList = [];
+
+  Future<void> offlineData(String table) async {
+    List<MessageModel> chatData = [];
+    List<Map<String, dynamic>> bookData = [];
+    try {
+      List<Map<String, dynamic>> maps =
+          await db!.query(table, orderBy: table == 'chat' ? "time" : "id");
+      if (table == "chat") {
+        chatData = List.from(maps.map((e) => MessageModel.fromMap(e)));
+        queryMessages.addAll(chatData);
+      } else if (table == "offlineBooks") {
+        offlineBooksList.clear();
+        offlineBooksList.addAll(maps);
+        print("offline books list length ${offlineBooksList.length}");
+      }
+      update();
+    } catch (e) {
+      print("error at get chats $e");
+    }
+  }
+
+  Future<void> deleteFromDb(int id) async {
+    try {
+      await db!.delete("chat", where: 'id = ?', whereArgs: [id]);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<void> deleteTableFromDb(String table) async {
+    try {
+      await db!.delete(table);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<int> updateDb(MessageModel chat) async {
+    return await db!
+        .update("chat", chat.toMap(), where: 'id = ?', whereArgs: [chat.id]);
+  }
+
+  Future close() async => db!.close();
+
   Future callAndErrorHendling(
       {required Function callback,
       required Function errorOccurFunction,
@@ -765,16 +1099,16 @@ class DiningVM extends GetxController {
           callback(data);
         } else {
           errorOccurFunction();
-          Get.snackbar("Error", "Something went wrong");
+          // Get.snackbar("Error", "Something went wrong");
         }
       } else {
         errorOccurFunction();
-        // print(response.body);
-        Get.snackbar("Error ", error ?? "Something went wrong");
+        print(response.body);
+        // showSnackBar(Get.context!, error ?? "Something went wrong", true);
       }
     } catch (e) {
       errorOccurFunction();
-      Get.snackbar("Error", "Something went wrong");
+      // showSnackBar(Get.context!, e.toString(), true);
       print("error catch  $url : ${e.toString()}");
     }
   }

@@ -3,10 +3,12 @@ import 'package:bookmark/ui/payment/payment.dart';
 import 'package:bookmark/ui/profile/address/user_address.dart';
 import 'package:bookmark/ui/profile/profileVM.dart';
 import 'package:bookmark/utils/login_first_dialog.dart';
+import 'package:bookmark/utils/offline_widget.dart';
 import 'package:bookmark/utils/snackbar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_offline/flutter_offline.dart';
 import 'package:get/get.dart';
 
 import 'package:bookmark/ui/homepage/homepage_vm.dart';
@@ -28,292 +30,327 @@ class _OrderPageState extends State<OrderPage> {
   Widget build(BuildContext context) {
     return Builder(builder: (context) {
       return GetBuilder<DiningVM>(builder: (vm) {
-        return Scaffold(
-          appBar: AppBar(
-            // backgroundColor: const Color(0xFFFAFAFA),
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(
-                Icons.arrow_back_ios,
-                // color: Color(0xFF3a3737),
-              ),
-              onPressed: () => Navigator.of(context).pop(),
-            ),
-            centerTitle: true,
-            title: Text(
-              "Your Cart",
-              style: TextStyle(
-                  // color: Color(0xFF3a3737),
-                  fontWeight: FontWeight.w600,
-                  fontSize: 18),
-              textAlign: TextAlign.center,
-            ),
-            brightness: Brightness.light,
-            actions: <Widget>[
-              !vm.showCartSelectOption
-                  ? SizedBox()
-                  : CartIconWithBadge(
-                      no: vm.selectedCartList.length,
-                      icon: Icons.delete,
-                      onPressed: () {
-                        vm.selectedCartList.isEmpty
-                            ? showSnackBar(
-                                context,
-                                "Please select at least one item to delete",
-                                true)
-                            : vm.deleteSelectedCartItems();
-                      },
+        return OfflineBuilder(
+          connectivityBuilder: (
+            BuildContext context,
+            ConnectivityResult connectivity,
+            Widget child,
+          ) {
+            final bool connected = connectivity != ConnectivityResult.none;
+            if (connected) {
+              return Scaffold(
+                appBar: AppBar(
+                  // backgroundColor: const Color(0xFFFAFAFA),
+                  elevation: 0,
+                  leading: IconButton(
+                    icon: const Icon(
+                      Icons.arrow_back_ios,
+                      // color: Color(0xFF3a3737),
                     ),
-            ],
-          ),
-          body: vm.getCartItemsLoader
-              ? Center(child: CircularProgressIndicator.adaptive())
-              : SingleChildScrollView(
-                  child: Container(
-                    padding: const EdgeInsets.all(15),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(
-                          children: [
-                            const Icon(Icons.shopping_cart,
-                                // color: Colors.black,
-                                size: 30),
-                            const SizedBox(width: 10),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "Your Added Cart Books",
-                                  style: TextStyle(
-                                      fontSize: 22,
-                                      color: Theme.of(context).canvasColor,
-                                      fontWeight: FontWeight.w600),
-                                  textAlign: TextAlign.left,
-                                ),
-                                Text(
-                                  "You have ${vm.cartfoods.length} books in your cart",
-                                  // "kmk",
-                                  style: const TextStyle(
-                                      fontSize: 14,
-                                      // color: Color(0xFF3a3a3b),
-                                      fontWeight: FontWeight.w400),
-                                  textAlign: TextAlign.left,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        vm.cartfoods.isEmpty
-                            ? Container(
-                                child: Center(
-                                  child: Column(
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  centerTitle: true,
+                  title: Text(
+                    "My Cart",
+                    style: TextStyle(
+                        // color: Color(0xFF3a3737),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 18),
+                    textAlign: TextAlign.center,
+                  ),
+                  brightness: Brightness.light,
+                  actions: <Widget>[
+                    !vm.showCartSelectOption
+                        ? SizedBox()
+                        : CartIconWithBadge(
+                            no: vm.selectedCartList.length,
+                            icon: Icons.delete,
+                            onPressed: () {
+                              vm.selectedCartList.isEmpty
+                                  ? showSnackBar(
+                                      context,
+                                      "Please select at least one item to delete",
+                                      true)
+                                  : vm.deleteSelectedCartItems();
+                            },
+                          ),
+                  ],
+                ),
+                body: vm.getCartItemsLoader
+                    ? Center(child: CircularProgressIndicator.adaptive())
+                    : SingleChildScrollView(
+                        child: Container(
+                          padding: const EdgeInsets.all(15),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: <Widget>[
+                              Row(
+                                children: [
+                                  const Icon(Icons.shopping_cart,
+                                      // color: Colors.black,
+                                      size: 30),
+                                  const SizedBox(width: 10),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Icon(
-                                        Icons.error,
-                                        color: Colors.grey.shade400,
-                                        size: 75,
+                                      Text(
+                                        "Your Added Cart Books",
+                                        style: TextStyle(
+                                            fontSize: 22,
+                                            color:
+                                                Theme.of(context).canvasColor,
+                                            fontWeight: FontWeight.w600),
+                                        textAlign: TextAlign.left,
                                       ),
-                                      const SizedBox(
-                                        height: 10,
+                                      Text(
+                                        "You have ${vm.cartfoods.length} books in your cart",
+                                        // "kmk",
+                                        style: const TextStyle(
+                                            fontSize: 14,
+                                            // color: Color(0xFF3a3a3b),
+                                            fontWeight: FontWeight.w400),
+                                        textAlign: TextAlign.left,
                                       ),
-                                      const Text("You haven't added any item",
-                                          style: TextStyle(fontSize: 18))
                                     ],
                                   ),
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              vm.cartfoods.isEmpty
+                                  ? Container(
+                                      child: Center(
+                                        child: Column(
+                                          children: [
+                                            Icon(
+                                              Icons.error,
+                                              color: Colors.grey.shade400,
+                                              size: 75,
+                                            ),
+                                            const SizedBox(
+                                              height: 10,
+                                            ),
+                                            const Text(
+                                                "You haven't added any item",
+                                                style: TextStyle(fontSize: 18))
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
+                                      height: vm.cartfoods.length * 142,
+                                      child: vm.cartfoods.isEmpty
+                                          ? const Text("Empty Card")
+                                          : ListView.separated(
+                                              physics:
+                                                  const NeverScrollableScrollPhysics(),
+                                              itemBuilder: (context, i) {
+                                                return CartItem(index: i);
+                                              },
+                                              separatorBuilder: (context, i) {
+                                                return const SizedBox(
+                                                  height: 10,
+                                                );
+                                              },
+                                              itemCount: vm.cartfoods.length)),
+                              const SizedBox(
+                                height: 20,
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              // Container(
+                              //   decoration: BoxDecoration(boxShadow: [
+                              //     BoxShadow(
+                              //       color: const Color(0xFFfae3e2).withOpacity(0.1),
+                              //       spreadRadius: 1,
+                              //       blurRadius: 1,
+                              //       offset: const Offset(0, 1),
+                              //     ),
+                              //   ]),
+                              //   height: vm.cartfoods.length * 75,
+                              //   child: ListView.separated(
+                              //       physics: const NeverScrollableScrollPhysics(),
+                              //       itemBuilder: (context, i) {
+                              //         return TotalCalculationWidget(
+                              //           name: vm.cartfoods[i].book.bookName,
+                              //           price: vm.cartfoods[i].book.rentPerDay! *
+                              //               (vm.cartfoods[i].noOfDays) *
+                              //               1.0,
+                              //         );
+                              //       },
+                              //       separatorBuilder: ((context, index) => const SizedBox(
+                              //             height: 5,
+                              //           )),
+                              //       itemCount: vm.cartfoods.length),
+                              // ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              // TotalCalculationWidget(
+                              //     fontSize: 22, name: "total", price: vm.totalPrice),
+                              // Container(
+                              //   padding: const EdgeInsets.only(left: 5),
+                              //   child: const Text(
+                              //     "Payment Method",
+                              //     style: TextStyle(
+                              //         fontSize: 20,
+                              //         color: Color(0xFF3a3a3b),
+                              //         fontWeight: FontWeight.w600),
+                              //     textAlign: TextAlign.left,
+                              //   ),
+                              // ),
+                              // const SizedBox(
+                              //   height: 10,
+                              // ),
+                              // PaymentMethodWidget(),
+                              // Container(
+                              //   // height: 80,
+                              //   // padding: const EdgeInsets.symmetric(horizontal: 30),
+                              //   decoration: BoxDecoration(
+                              //       // color: Colors.red,
+                              //       borderRadius: BorderRadius.circular(10),
+                              //       boxShadow: [
+                              //         BoxShadow(
+                              //           color: const Color(0xFFfae3e2).withOpacity(0.1),
+                              //           spreadRadius: 1,
+                              //           blurRadius: 1,
+                              //           offset: const Offset(0, 1),
+                              //         ),
+                              //       ]),
+                              //   child: Column(
+                              //     children: [
+                              //       Container(
+                              //         height: vm.variousFeesList.length * 33,
+                              //         child: ListView.separated(
+                              //             physics: const NeverScrollableScrollPhysics(),
+                              //             itemBuilder: (context, i) {
+                              //               return totalAmount(vm,
+                              //                   name:
+                              //                       "${vm.variousFeesList[i].entries.first.key}",
+                              //                   price: vm.variousFeesList[i].entries.first
+                              //                       .value);
+                              //             },
+                              //             separatorBuilder: (context, i) {
+                              //               return const SizedBox(height: 10);
+                              //             },
+                              //             itemCount: vm.variousFeesList.length),
+                              //         // itemCount: vm.variousFees.toMap().length),
+                              //       ),
+                              //       // totalAmount(vm,
+                              //       //     name: "sub-total",
+                              //       //     price: vm.variousFees.totalWithoutCharges
+                              //       //         .toDouble()),
+                              //       // totalAmount(vm,
+                              //       //     name: "Charges",
+                              //       //     price: vm.cartfoods.isEmpty
+                              //       //         ? 0.0
+                              //       //         : vm.getTotalCharges(),
+                              //       //     icon: Icons.error),
+                              //       // totalAmount(vm,
+                              //       //     name: "Total",
+                              //       //     price: vm.cartfoods.isEmpty
+                              //       //         ? 0.0
+                              //       //         : (vm.variousFees.total * 1.0)),
+                              //     ],
+                              //   ),
+                              // )
+                            ],
+                          ),
+                        ),
+                      ),
+                bottomNavigationBar: Container(
+                  width: Get.width,
+                  color: Colors.transparent,
+                  height: 72,
+                  child: Column(
+                    children: [
+                      vm.getCartItemsLoader
+                          ? const SizedBox()
+                          : Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 15.0),
+                              child: totalAmount(vm,
+                                  name: "Total",
+                                  price:
+                                      vm.variousFees.rentalCharge.toDouble()),
+                            ),
+                      Center(
+                        child: InkWell(
+                          onTap: () {
+                            if (vm.cartfoods.isEmpty) {
+                              showSnackBar(context,
+                                  "Please add some items to cart", true);
+                            }
+                            if (vm.getCartItemsLoader) {
+                              showSnackBar(
+                                  context,
+                                  "Please wait while we are loading data",
+                                  true);
+                            } else {
+                              //  Get.to(() => PaymentPage(price: vm.totalPrice));
+                              profilVM.getAddressList();
+                              Get.to(() => UserAddress(
+                                  isPayment: true, total: vm.totalPrice));
+                            }
+                          },
+                          child: Container(
+                            width: Get.width - 45,
+                            // width: Get.width < 550 ? Get.width - 45 : Get.width * 0.5,
+                            height: 45,
+                            decoration: BoxDecoration(
+                              color: vm.getCartItemsLoader
+                                  ? Colors.grey.shade700
+                                  : Theme.of(context).primaryColor,
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFFfae3e2).withOpacity(0.2),
+                                  spreadRadius: 1,
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 0),
                                 ),
-                              )
-                            : Container(
-                                height: vm.cartfoods.length * 140,
-                                child: vm.cartfoods.isEmpty
-                                    ? const Text("Empty Card")
-                                    : ListView.separated(
-                                        physics:
-                                            const NeverScrollableScrollPhysics(),
-                                        itemBuilder: (context, i) {
-                                          return CartItem(index: i);
-                                        },
-                                        separatorBuilder: (context, i) {
-                                          return const SizedBox(
-                                            height: 10,
-                                          );
-                                        },
-                                        itemCount: vm.cartfoods.length)),
-                        const SizedBox(
-                          height: 20,
-                        ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        // Container(
-                        //   decoration: BoxDecoration(boxShadow: [
-                        //     BoxShadow(
-                        //       color: const Color(0xFFfae3e2).withOpacity(0.1),
-                        //       spreadRadius: 1,
-                        //       blurRadius: 1,
-                        //       offset: const Offset(0, 1),
-                        //     ),
-                        //   ]),
-                        //   height: vm.cartfoods.length * 75,
-                        //   child: ListView.separated(
-                        //       physics: const NeverScrollableScrollPhysics(),
-                        //       itemBuilder: (context, i) {
-                        //         return TotalCalculationWidget(
-                        //           name: vm.cartfoods[i].book.bookName,
-                        //           price: vm.cartfoods[i].book.rentPerDay! *
-                        //               (vm.cartfoods[i].noOfDays) *
-                        //               1.0,
-                        //         );
-                        //       },
-                        //       separatorBuilder: ((context, index) => const SizedBox(
-                        //             height: 5,
-                        //           )),
-                        //       itemCount: vm.cartfoods.length),
-                        // ),
-                        const SizedBox(
-                          height: 10,
-                        ),
-                        // TotalCalculationWidget(
-                        //     fontSize: 22, name: "total", price: vm.totalPrice),
-                        // Container(
-                        //   padding: const EdgeInsets.only(left: 5),
-                        //   child: const Text(
-                        //     "Payment Method",
-                        //     style: TextStyle(
-                        //         fontSize: 20,
-                        //         color: Color(0xFF3a3a3b),
-                        //         fontWeight: FontWeight.w600),
-                        //     textAlign: TextAlign.left,
-                        //   ),
-                        // ),
-                        // const SizedBox(
-                        //   height: 10,
-                        // ),
-                        // PaymentMethodWidget(),
-                        // Container(
-                        //   // height: 80,
-                        //   // padding: const EdgeInsets.symmetric(horizontal: 30),
-                        //   decoration: BoxDecoration(
-                        //       // color: Colors.red,
-                        //       borderRadius: BorderRadius.circular(10),
-                        //       boxShadow: [
-                        //         BoxShadow(
-                        //           color: const Color(0xFFfae3e2).withOpacity(0.1),
-                        //           spreadRadius: 1,
-                        //           blurRadius: 1,
-                        //           offset: const Offset(0, 1),
-                        //         ),
-                        //       ]),
-                        //   child: Column(
-                        //     children: [
-                        //       Container(
-                        //         height: vm.variousFeesList.length * 33,
-                        //         child: ListView.separated(
-                        //             physics: const NeverScrollableScrollPhysics(),
-                        //             itemBuilder: (context, i) {
-                        //               return totalAmount(vm,
-                        //                   name:
-                        //                       "${vm.variousFeesList[i].entries.first.key}",
-                        //                   price: vm.variousFeesList[i].entries.first
-                        //                       .value);
-                        //             },
-                        //             separatorBuilder: (context, i) {
-                        //               return const SizedBox(height: 10);
-                        //             },
-                        //             itemCount: vm.variousFeesList.length),
-                        //         // itemCount: vm.variousFees.toMap().length),
-                        //       ),
-                        //       // totalAmount(vm,
-                        //       //     name: "sub-total",
-                        //       //     price: vm.variousFees.totalWithoutCharges
-                        //       //         .toDouble()),
-                        //       // totalAmount(vm,
-                        //       //     name: "Charges",
-                        //       //     price: vm.cartfoods.isEmpty
-                        //       //         ? 0.0
-                        //       //         : vm.getTotalCharges(),
-                        //       //     icon: Icons.error),
-                        //       // totalAmount(vm,
-                        //       //     name: "Total",
-                        //       //     price: vm.cartfoods.isEmpty
-                        //       //         ? 0.0
-                        //       //         : (vm.variousFees.total * 1.0)),
-                        //     ],
-                        //   ),
-                        // )
-                      ],
-                    ),
-                  ),
-                ),
-          bottomNavigationBar: Container(
-            width: Get.width,
-            color: Colors.transparent,
-            height: 72,
-            child: Column(
-              children: [
-                vm.getCartItemsLoader
-                    ? const SizedBox()
-                    : Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 15.0),
-                        child: totalAmount(vm,
-                            name: "Total",
-                            price: vm.variousFees.rentalCharge.toDouble()),
-                      ),
-                Center(
-                  child: InkWell(
-                    onTap: () {
-                      if (vm.cartfoods.isEmpty) {
-                        showSnackBar(
-                            context, "Please add some items to cart", true);
-                      }
-                      if (vm.getCartItemsLoader) {
-                        showSnackBar(context,
-                            "Please wait while we are loading data", true);
-                      } else {
-                        //  Get.to(() => PaymentPage(price: vm.totalPrice));
-                        profilVM.getAddressList();
-                        Get.to(() =>
-                            UserAddress(isPayment: true, total: vm.totalPrice));
-                      }
-                    },
-                    child: Container(
-                      width: Get.width - 45,
-                      // width: Get.width < 550 ? Get.width - 45 : Get.width * 0.5,
-                      height: 45,
-                      decoration: BoxDecoration(
-                        color: vm.getCartItemsLoader
-                            ? Colors.grey.shade700
-                            : Theme.of(context).primaryColor,
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFfae3e2).withOpacity(0.2),
-                            spreadRadius: 1,
-                            blurRadius: 10,
-                            offset: const Offset(0, 0),
-                          ),
-                        ],
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: Center(
-                        child: Text(
-                          vm.getCartItemsLoader ? "Loading..." : "Proceed",
-                          style: TextStyle(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
+                              ],
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: Center(
+                              child: Text(
+                                vm.getCartItemsLoader
+                                    ? "Loading..."
+                                    : "Proceed",
+                                style: TextStyle(
+                                  color:
+                                      Theme.of(context).scaffoldBackgroundColor,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            // ),
                           ),
                         ),
                       ),
-                      // ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
+              );
+            } else {
+              return Scaffold(
+                  appBar: AppBar(
+                      title: const Text("My Cart"),
+                      centerTitle: true,
+                      leading: IconButton(
+                        icon: const Icon(Icons.arrow_back_ios),
+                        onPressed: () {
+                          Get.back();
+                        },
+                      )),
+                  body: offlineWidget());
+            }
+          },
+          child: Text(""),
         );
       });
     });
@@ -618,9 +655,9 @@ class CartItem extends StatelessWidget {
                           ),
                         ),
                         Container(
-                          // color: Colors.red,
+                          // color: Colors.blue,
                           width: vm.showCartSelectOption
-                              ? Get.width - 190
+                              ? Get.width - 180
                               : Get.width - 160,
                           height: 110,
                           child: Column(

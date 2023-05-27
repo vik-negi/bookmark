@@ -1,6 +1,8 @@
 import 'package:bookmark/ui/homepage/homepage_vm.dart';
+import 'package:bookmark/ui/main/home.dart';
 import 'package:bookmark/ui/profile/address/user_address.dart';
 import 'package:bookmark/ui/profile/profileVM.dart';
+import 'package:bookmark/utils/cupertinoDialogBox.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:bookmark/constants/colors.dart';
@@ -9,6 +11,7 @@ import 'package:bookmark/ui/profile/liked_food_screen.dart';
 import 'package:bookmark/ui/profile/profile_update_screen.dart';
 import 'package:bookmark/ui/profile/setting_Screen.dart';
 import 'package:bookmark/widgets/my_drawer.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 class FifthPage extends StatefulWidget {
@@ -90,8 +93,8 @@ class _FifthPageState extends State<FifthPage> {
                 isThreeLine: true,
                 trailing: ClipRRect(
                   borderRadius: const BorderRadius.all(Radius.circular(50)),
-                  child: Image.network(
-                    vm.currentUserData["image"]!,
+                  child: Image.memory(
+                    Uint8List.fromList(vm.currentUserData["image"]!.codeUnits),
                     height: 50,
                     fit: BoxFit.cover,
                     width: 50,
@@ -323,7 +326,15 @@ class _FifthPageState extends State<FifthPage> {
                     ),
                     trailing: Icon(Icons.keyboard_arrow_right),
                   ),
-                  const ListTile(
+                  ListTile(
+                    onTap: () {
+                      CupertinoDialogBox(context, () {
+                        Navigator.pop(context);
+                        vm.logout();
+                        Navigator.of(context).pushReplacement(MaterialPageRoute(
+                            builder: (context) => HomeView()));
+                      }, "Logout", 'Are you sure you want to logout?');
+                    },
                     title: Text(
                       'Log Out',
                       // style: TextStyles.highlighterTwo,

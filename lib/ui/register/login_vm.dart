@@ -88,12 +88,14 @@ class LoginVM extends GetxController {
           await SharedPrefs.setString(
               "address", jsonEncode(data["msg"]["result"]["address"][0]));
           UserModel userData = UserModel.fromJson(data["msg"]["result"]);
+          var image = await http.get(Uri.parse(userData.image!.url));
+          var bytes = image.bodyBytes;
           print("email : ${userData.email}");
           await SharedPrefs.setString("token", token);
           await SharedPrefs.setString("email", userData.email ?? "");
           await SharedPrefs.setString("name", userData.name ?? "");
           await SharedPrefs.setString("userName", userData.userName ?? "");
-          await SharedPrefs.setString("image", userData.image!.url);
+          await SharedPrefs.setString("image", String.fromCharCodes(bytes));
           await SharedPrefs.setString("id", userData.id ?? "");
           await SharedPrefs.setString("updatedAt", userData.updatedAt ?? "");
           print("yaha tak sahi chal raha hai");

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:bookmark/ui/add_book/add_book.dart';
 import 'package:bookmark/ui/add_book/user_added_books.dart';
 import 'package:bookmark/ui/homepage/homepage_vm.dart';
@@ -11,6 +13,7 @@ import 'package:bookmark/ui/aboutus.dart';
 import 'package:bookmark/ui/main/home.dart';
 import 'package:bookmark/ui/profile/profile.dart';
 import 'package:bookmark/ui/profile/setting_Screen.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:bookmark/utils/shared_prefer.dart';
 
@@ -72,8 +75,9 @@ class LogInDrwaer extends StatelessWidget {
                                     color: Theme.of(context).primaryColor)),
                             currentAccountPicture: ClipRRect(
                               borderRadius: BorderRadius.circular(50),
-                              child: Image.network(
-                                vm.currentUserData["image"]!,
+                              child: Image.memory(
+                                Uint8List.fromList(
+                                    vm.currentUserData["image"]!.codeUnits),
                                 width: 150,
                                 fit: BoxFit.cover,
                                 height: 150,

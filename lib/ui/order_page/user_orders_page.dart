@@ -1,7 +1,9 @@
 import 'package:bookmark/model/order_model.dart';
 import 'package:bookmark/ui/order_page/order_details.dart';
 import 'package:bookmark/ui/order_page/order_vm.dart';
+import 'package:bookmark/utils/offline_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_offline/flutter_offline.dart';
 import 'package:get/get.dart';
 
 class UserOrdersPage extends StatelessWidget {
@@ -16,7 +18,7 @@ class UserOrdersPage extends StatelessWidget {
         appBar: AppBar(
             title: const Text('My Orders'),
             bottom: TabBar(
-                indicatorPadding: const EdgeInsets.symmetric(horizontal: 20),
+                // indicatorPadding: const EdgeInsets.symmetric(horizontal: 20),
                 // indicator: BoxDecoration(
                 //     borderRadius: BorderRadius.circular(50),
                 //     color: Colors.white),
@@ -28,24 +30,55 @@ class UserOrdersPage extends StatelessWidget {
               : TabBarView(
                   controller: vm.tabController,
                   children: [
-                    ListView.separated(
-                        itemBuilder: (context, i) {
-                          return UserOrderWidget(
-                              order: vm.activeUserOrderList[i]);
-                        },
-                        separatorBuilder: (context, i) {
-                          return const SizedBox(height: 10);
-                        },
-                        itemCount: vm.activeUserOrderList.length),
+                    OfflineBuilder(
+                      connectivityBuilder: (
+                        BuildContext context,
+                        ConnectivityResult connectivity,
+                        Widget child,
+                      ) {
+                        final bool connected =
+                            connectivity != ConnectivityResult.none;
+                        if (connected) {
+                          return ListView.separated(
+                              itemBuilder: (context, i) {
+                                return UserOrderWidget(
+                                    order: vm.activeUserOrderList[i]);
+                              },
+                              separatorBuilder: (context, i) {
+                                return const SizedBox(height: 10);
+                              },
+                              itemCount: vm.activeUserOrderList.length);
+                        } else {
+                          return offlineWidget();
+                        }
+                      },
+                      child: Text(""),
+                    ),
                     Container(
-                      child: ListView.separated(
-                          itemBuilder: (context, i) {
-                            return UserOrderWidget(order: vm.userOrderList[i]);
-                          },
-                          separatorBuilder: (context, i) {
-                            return const SizedBox(height: 10);
-                          },
-                          itemCount: vm.userOrderList.length),
+                      child: OfflineBuilder(
+                        connectivityBuilder: (
+                          BuildContext context,
+                          ConnectivityResult connectivity,
+                          Widget child,
+                        ) {
+                          final bool connected =
+                              connectivity != ConnectivityResult.none;
+                          if (connected) {
+                            return ListView.separated(
+                                itemBuilder: (context, i) {
+                                  return UserOrderWidget(
+                                      order: vm.userOrderList[i]);
+                                },
+                                separatorBuilder: (context, i) {
+                                  return const SizedBox(height: 10);
+                                },
+                                itemCount: vm.userOrderList.length);
+                          } else {
+                            return offlineWidget();
+                          }
+                        },
+                        child: Text(""),
+                      ),
                     )
                   ],
                 );

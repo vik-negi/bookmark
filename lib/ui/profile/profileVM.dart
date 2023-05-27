@@ -201,11 +201,8 @@ class ProfileVM extends GetxController {
     await callAndErrorHendling(
       callback: (data) {
         print("data : ${data["msg"]}");
-        ScaffoldMessenger.of(Get.context!).showSnackBar(
-          SnackBar(
-            content: Text("Address Updated Successfully"),
-          ),
-        );
+
+        showSnackBar(Get.context!, "Address Updated Successfully", false);
         // Get.back();
         getAddressList();
       },
@@ -256,12 +253,8 @@ class ProfileVM extends GetxController {
     await callAndErrorHendling(
       callback: (data) {
         print("data : ${data}");
-        // Get.snackbar("Success", "Deleted Updated Successfully");
-        ScaffoldMessenger.of(Get.context!).showSnackBar(
-          SnackBar(
-            content: Text("Address Deleted Successfully"),
-          ),
-        );
+
+        showSnackBar(Get.context!, "Address Deleted Successfully", false);
         Get.back();
         getAddressList();
       },
@@ -384,7 +377,7 @@ class ProfileVM extends GetxController {
           errorOccur();
           // update();
           errorFunction();
-          showSnackBar(Get.context!, "Something went wrong", true);
+          // showSnackBar(Get.context!, "Something went wrong", true);
         }
       } else {
         print(response.body);
@@ -392,12 +385,12 @@ class ProfileVM extends GetxController {
         Map<String, dynamic> data = jsonDecode(response.body);
         errorFunction();
         // update();
-        showSnackBar(Get.context!, data["msg"] ?? "something went wrong", true);
+        // showSnackBar(Get.context!, data["msg"] ?? "something went wrong", true);
       }
     } catch (e) {
       errorOccur();
       errorFunction();
-      showSnackBar(Get.context!, error ?? "Something went wrong", true);
+      // showSnackBar(Get.context!, error ?? "Something went wrong", true);
       // update();
       print("catch error $e");
     }
